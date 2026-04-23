@@ -1,5 +1,5 @@
 // Requirement put a string "k1=v1,k2=v2,k3=v3,k4=v4,..." into std::map<string, string>
-// Compile: g++ -std=c++17 -Wall -Wextra -O2 map-example.C
+// Compile: g++ -std=c++17 -Wall -Wextra -O2 str2map.C -o str2map
 
 #include <iostream>
 #include <map>
