@@ -65,7 +65,7 @@ template <typename T>
 void ouchParser::parseOuchMessage(const T ouchMessage, PkgCaptureStats& stat) 
 {
   const auto msgType = ouchMessage->getMessageType();
-  OUTPUT("--- Ouch message type: " << msgType << " ---\n");
+  OUTPUT("--- Ouch " << ouchMessage->getMessageTypeStr(static_cast<OuchMessageType>(msgType)) << " message ---\n");
   if (msgType == OuchMessageType::EXECUTED)
   {
     OUTPUT("---  " << ouchMessage->getShares() << " shares executed ---\n");

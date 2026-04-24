@@ -14,6 +14,17 @@ enum OuchMessageType
   INVALID      = -1,
 };
 
+
+using msgTypeToStringMap = std::unordered_map<OuchMessageType, std::string>;
+
+static msgTypeToStringMap msgTypeStrMap = {
+  {OuchMessageType::SYSTEM_EVENT, "System Event"},
+  {OuchMessageType::ACCEPTED, "Accepted"},
+  {OuchMessageType::REPLACED, "Replaced"},
+  {OuchMessageType::EXECUTED, "Executed"},
+  {OuchMessageType::CANCELED, "Cancelled"}
+};
+
 enum OuchMessageState
 {
   EMPTY           = 0,
@@ -45,6 +56,7 @@ struct OUCHSystemEventMessage
 
     char getMessageType() const { return message_type;  }
     uint32_t getShares()  const { return 0; }
+    std::string& getMessageTypeStr(OuchMessageType msgType) const { return msgTypeStrMap[msgType];  }
 };
 static_assert(sizeof(OUCHSystemEventMessage) == 13, "OUCHSystemEventMessage size must be 13 bytes");
 
@@ -74,6 +86,7 @@ struct OUCHAcceptedMessage
 
     uint32_t getShares()      const { return ntohl(shares); }
     char     getMessageType() const { return message_type;  }
+    std::string& getMessageTypeStr(OuchMessageType msgType) const { return msgTypeStrMap[msgType];  }
 };
 static_assert(sizeof(OUCHAcceptedMessage) == 68, "OUCHAcceptedMessage size must be 68 bytes");
 
@@ -102,6 +115,7 @@ struct OUCHReplacedMessage
 
     uint32_t getShares()      const { return ntohl(shares); }
     char     getMessageType() const { return message_type;  }
+    std::string& getMessageTypeStr(OuchMessageType msgType) const { return msgTypeStrMap[msgType];  }
 };
 static_assert(sizeof(OUCHReplacedMessage) == 82, "OUCHReplacedMessage size must be 82 bytes");
 
@@ -121,6 +135,7 @@ struct OUCHExecutedMessage
 
     uint32_t getShares() const { return ntohl(executed_shares); }
     char getMessageType() const { return message_type; }
+    std::string& getMessageTypeStr(OuchMessageType msgType) const { return msgTypeStrMap[msgType];  }
 };
 static_assert(sizeof(OUCHExecutedMessage) == 43, "OUCHExecutedMessage size must be 43 bytes");
 
@@ -137,6 +152,7 @@ struct OUCHCanceledMessage {
 
     uint32_t getShares() const { return ntohl(decrement_shares); }
     char getMessageType() const { return message_type; }
+    std::string& getMessageTypeStr(OuchMessageType msgType) const { return msgTypeStrMap[msgType];  }
 };
 static_assert(sizeof(OUCHCanceledMessage) == 31, "OUCHCanceledMessage size is not 31 bytes");
 
