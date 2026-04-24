@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <map>
+#include <boost/tokenizer.hpp>
 
 // We can use std::multimap if needed
 using strMap = std::map<std::string, std::string>;
@@ -11,45 +12,35 @@ using strMap = std::map<std::string, std::string>;
  * inputStr contains key-value pairs separated by commas
  * For example: "k1=v1,k2=v2,k3=v3,k4=v4,..."
  * Output: map =  { k1 : v1,
-                    k2 : v2,
-                    k3 : v3,
-                    k4 : v4
-                  }
+ *                  k2 : v2,
+ *                  k3 : v3,
+ *                  k4 : v4
+ *                }
  */
-int strToMap(const std::string inputStr, strMap& map)
+void strToMap(const std::string inputStr, strMap& map)
 {
   if (inputStr.empty())
   {
-    return -1;
+    return;
   }
 
   map.clear();
-  size_t start = 0, end = 0;
-  do {
-    end = inputStr.find(',', start);
-    const auto keyVal = inputStr.substr(start, end - start); // string before ','
-
-    const auto pos = keyVal.find('=');
+  const boost::char_separator<char> sep(",");
+  boost::tokenizer<boost::char_separator<char>> tokens(inputStr, sep);
+  for (const auto& token : tokens)
+  {
+    const auto pos = token.find('=');
     if (pos != std::string::npos)
     {
-      const auto key = keyVal.substr(0, pos);
-      const auto value = keyVal.substr(pos+1);
-      //std::cout << key << " = " << value << std::endl;
-      if (!key.empty())
-      {
-        map[key] = value;
-      }
+      map.emplace(token.substr(0, pos), token.substr(pos+1));
     }
-    start = end + 1;
-  } while (end != std::string::npos);
-
-  return 0;
+  }
 }
 
 int main()
 {
   strMap map;
-  strToMap("k1=v1,k2=v2,k3=v3,k4=v4,X=", map);
+  strToMap("k1=v1,k2=v2,k3=v3,k4=v4,X=,,,", map);
 
   for (const auto& [key, value] : map)
   {
