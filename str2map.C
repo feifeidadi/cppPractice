@@ -19,11 +19,6 @@ using strMap = std::map<std::string, std::string>;
  */
 void strToMap(const std::string inputStr, strMap& map)
 {
-  if (inputStr.empty())
-  {
-    return;
-  }
-
   map.clear();
   const boost::char_separator<char> sep(",");
   boost::tokenizer<boost::char_separator<char>> tokens(inputStr, sep);
@@ -41,10 +36,15 @@ int main()
 {
   strMap map;
   strToMap("k1=v1,k2=v2,k3=v3,k4=v4,X=,,,", map);
-
   for (const auto& [key, value] : map)
   {
     std::cout << key << " : " << value << std::endl;
+  }
+
+  strToMap("", map); // Map will be cleared if the input string is empty
+  if (map.empty())
+  {
+    std::cout << "Empty map" << std::endl;
   }
 
   return 0;
