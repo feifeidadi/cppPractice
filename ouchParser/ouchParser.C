@@ -79,7 +79,7 @@ bool ouchParser::tryParse(const Packet& ouchMessage, PkgCaptureStats& stat) {
     if (ouchMessage[3] == T::MSG_TYPE && ouchMessage.size() == sizeof(T))
     {
         parseOuchMessage(reinterpret_cast<const T*>(ouchMessage.data()), stat);
-        hexDump(ouchMessage);
+        hexDump(ouchMessage.data(), ouchMessage.size());
         return true;
     }
 

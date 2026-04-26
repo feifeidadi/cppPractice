@@ -1,39 +1,52 @@
 #include <iomanip>
 #include "hexDump.H"
 
-constexpr size_t bytesPerLine = 16;
-void printAscii(const uint8_t *data, const uint8_t size, const uint8_t numLeadingSpace = 1)
+static constexpr size_t bytesPerLine = 16;
+void printLeadingSpaces(const uint8_t numLeadingSpace)
 {
   for (size_t i = 0; i < numLeadingSpace; ++i)
   {
     printf(" ");
   }
+}
 
-  for (size_t i = 0; i < size; ++i) {
+void printASCII(const uint8_t *data, const size_t size)
+{
+  const auto numSpace = (size == bytesPerLine ? 1: ((bytesPerLine - size) * 3 + 1));
+  printLeadingSpaces(numSpace);
+
+  for (size_t i = 0; i < size; ++i)
+  {
     printf("%c", std::isprint(data[i]) ? data[i] : '.');
   }
   printf("\n");
 }
 
-void hexDump([[maybe_unused]]const Packet& data)
+void printHexBytes(const uint8_t *data, const size_t size)
 {
-#ifdef DEBUG
-  for (size_t i = 0; i < data.size(); ++i)
+  for (size_t i = 0; i < size; ++i)
   {
     printf("%02x ", data[i]); // Hex bytes
-    const auto numBytesInLine = (i + 1) % bytesPerLine;
-    if (numBytesInLine == 0) // Print ASCII after hex bytes
-    {
-      printAscii(data.data() + i - (bytesPerLine - 1), bytesPerLine);
-    }
-    else if (i == (data.size()-1)) // Print last line's ASCII characters
-    {
-      printAscii(data.data() + ( data.size() - numBytesInLine),  /* Start address of last line */
-                 numBytesInLine,
-                 (bytesPerLine - numBytesInLine) * 3 + 1 /* Number of leading spaces in the last ASCII line */);
-
-    }
   }
+}
+
+// Print hex bytes alongside ASCII characters.
+void printHexAndAscii(const uint8_t *data, const size_t size)
+{
+  printHexBytes(data, size);
+  printASCII(data, size);
+}
+
+void hexDump([[maybe_unused]]const uint8_t *data, [[maybe_unused]]const size_t size)
+{
+#ifdef DEBUG
+  for (size_t i = 0; i < size; i+=bytesPerLine)
+  {
+    printHexAndAscii(data + i, 
+                     // data size is (size - i) for last line
+                     i + bytesPerLine < size ? bytesPerLine : size - i);
+  }
+
   printf("\n");
 #endif
 }

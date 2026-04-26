@@ -1,6 +1,5 @@
 #pragma once
 #include <iostream>
 #include <arpa/inet.h>
-#include "ouchProtocol.H"
 
-void hexDump([[maybe_unused]]const Packet& data);
+void hexDump([[maybe_unused]]const uint8_t *data, [[maybe_unused]]const size_t size);
