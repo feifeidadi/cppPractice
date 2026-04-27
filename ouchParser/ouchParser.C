@@ -26,39 +26,16 @@ uint16_t ouchParser::getOuchMsgLength(const Packet& packet)
   return ntohs(OuchMsgLenthBE); // Convert Big Endian -> Host byte order
 }
 
-void ouchParser::printOuchOrdersInfo(const uint32_t accepted, const uint32_t systemEvent,
-                         const uint32_t replaced, const uint32_t canceled,
-                         const uint32_t executed, const uint32_t executedShares)
+void ouchParser::printStats() const
 {
-  std::cout << " Accepted: "     << accepted << " messages" << std::endl;
-  std::cout << " System Event: " << systemEvent << " messages" << std::endl;
-  std::cout << " Replaced: "     << replaced << " messages" << std::endl;
-  std::cout << " Canceled: "     << canceled << " messages" << std::endl;
-  std::cout << " Executed: "     << executed << " messages: ";
-  std::cout << executedShares    << " executed shares" << std::endl;
-}
-
-void ouchParser::printStats()
-{
-  uint32_t totalSystemEvent{0}, totalAccepted{0}, totalReplaced{0}, totalCanceled{0}, totalExecuted{0}, totalExecutedShares{0};
   for (const auto& [streamId, stat] : m_stats)
   {
       std::cout << "Stream " << std::dec << streamId << std::endl;
-      printOuchOrdersInfo(stat.getNumAcceptedMsgs(), stat.getNumSystemEvent(),
-                          stat.getNumReplacedMsgs(), stat.getNumCanceledMsgs(),
-                          stat.getNumExecutedMsgs(), stat.getExecutedShares());
-
-      totalSystemEvent += stat.getNumSystemEvent();
-      totalAccepted += stat.getNumAcceptedMsgs();
-      totalReplaced += stat.getNumReplacedMsgs();
-      totalCanceled += stat.getNumCanceledMsgs();
-      totalExecuted += stat.getNumExecutedMsgs();
-      totalExecutedShares += stat.getNumExecutedShares();
+      stat.printInfo();
   }
 
   std::cout << "Totals:" << std::endl;
-  printOuchOrdersInfo(totalAccepted, totalSystemEvent, totalReplaced,
-                      totalCanceled, totalExecuted, totalExecutedShares);
+  m_allPkgCaptureStats.printInfo();
 }
 
 template <typename T>
@@ -70,8 +47,10 @@ void ouchParser::parseOuchMessage(const T ouchMessage, PkgCaptureStats& stat)
   {
     OUTPUT("---  " << ouchMessage->getShares() << " shares executed ---\n");
     stat.increaseExecutedShares(ouchMessage->getShares());
+    m_allPkgCaptureStats.increaseExecutedShares(ouchMessage->getShares());
   }
   stat.increaseNumMsgs(msgType);
+  m_allPkgCaptureStats.increaseNumMsgs(msgType);
 }
 
 template<typename T>

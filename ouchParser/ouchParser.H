@@ -57,13 +57,22 @@ struct PkgCaptureStats
     }
   }
 
+  void printInfo() const
+  {
+    std::cout << " Accepted: "     << getNumAcceptedMsgs() << " messages" << std::endl;
+    std::cout << " System Event: " << getNumSystemEvent()  << " messages" << std::endl;
+    std::cout << " Replaced: "     << getNumReplacedMsgs() << " messages" << std::endl;
+    std::cout << " Canceled: "     << getNumCanceledMsgs() << " messages" << std::endl;
+    std::cout << " Executed: "     << getNumExecutedMsgs() << " messages: ";
+    std::cout << getNumExecutedShares() << " executed shares" << std::endl;
+  }
+
   uint32_t getNumSystemEvent()    const { return numSystemEvent;  }
   uint32_t getNumAcceptedMsgs()   const { return numAcceptedMsgs; }
   uint32_t getNumReplacedMsgs()   const { return numReplacedMsgs; }
   uint32_t getNumCanceledMsgs()   const { return numCanceledMsgs; }
   uint32_t getNumExecutedMsgs()   const { return numExecutedMsgs; }
   uint32_t getNumExecutedShares() const { return numExecutedShares; }
-  uint32_t getExecutedShares()    const { return numExecutedShares; }
 };
 
 class ouchParser
@@ -73,7 +82,7 @@ public:
   ~ouchParser() {}
 
   int  parsePacketFile(const std::string& filename);
-  void printStats();
+  void printStats() const;
 
 private:
   //void hexDump([[maybe_unused]]const Packet& data);
@@ -95,11 +104,8 @@ private:
   Packet& combineTwoPackets(const Packet first, const Packet second);
   void updateOuchMsgState(const OuchMessageState newOuchsgState, OuchMessageState& ouchMsgState);
 
-  void printOuchOrdersInfo(const uint32_t accepted, const uint32_t systemEvent,
-                           const uint32_t replaced, const uint32_t canceled,
-                           const uint32_t executed, const uint32_t executedShares);
-
   std::ifstream m_file;
   Streams m_streams;
   Stats m_stats;
+  PkgCaptureStats m_allPkgCaptureStats{}; // Statistics of all streams packets
 };
