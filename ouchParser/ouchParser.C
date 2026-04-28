@@ -31,8 +31,8 @@ void ouchParser::printStats() const
 {
   for (const auto& [streamId, stat] : m_stats)
   {
-      std::cout << "Stream " << std::dec << streamId << std::endl;
-      stat.printInfo();
+    std::cout << "Stream " << std::dec << streamId << std::endl;
+    stat.printInfo();
   }
 
   std::cout << "Totals:" << std::endl;
@@ -40,7 +40,7 @@ void ouchParser::printStats() const
 }
 
 template <typename T>
-void ouchParser::parseOuchMessage(const T ouchMessage, PkgCaptureStats& stat) 
+void ouchParser::parseOuchMessage(const T ouchMessage, PkgCaptureStats& stat)
 {
   const auto msgType = ouchMessage->getMessageType();
   OUTPUT("--- Ouch " << ouchMessage->getMessageTypeStr(static_cast<OuchMessageType>(msgType)) << " message ---\n");
@@ -55,29 +55,30 @@ void ouchParser::parseOuchMessage(const T ouchMessage, PkgCaptureStats& stat)
 }
 
 template<typename T>
-bool ouchParser::tryParse(const Packet& ouchMessage, PkgCaptureStats& stat) {
-    if (ouchMessage[3] == T::MSG_TYPE && ouchMessage.size() == sizeof(T))
-    {
-        parseOuchMessage(reinterpret_cast<const T*>(ouchMessage.data()), stat);
-        hexDump(ouchMessage.data(), ouchMessage.size());
-        return true;
-    }
+bool ouchParser::tryParse(const Packet& ouchMessage, PkgCaptureStats& stat)
+{
+  if (ouchMessage[3] == T::MSG_TYPE && ouchMessage.size() == sizeof(T))
+  {
+    parseOuchMessage(reinterpret_cast<const T*>(ouchMessage.data()), stat);
+    hexDump(ouchMessage.data(), ouchMessage.size());
+    return true;
+  }
 
-    return false;
+  return false;
 }
 
 void ouchParser::parsePacket(const Packet& ouchMessage, PkgCaptureStats& stat)
 {
-    bool parsed = tryParse<OUCHAcceptedMessage>(ouchMessage, stat) ||
-                  tryParse<OUCHCanceledMessage>(ouchMessage, stat) ||
-                  tryParse<OUCHExecutedMessage>(ouchMessage, stat) ||
-                  tryParse<OUCHReplacedMessage>(ouchMessage, stat) ||
-                  tryParse<OUCHSystemEventMessage>(ouchMessage, stat);
+  bool parsed = tryParse<OUCHAcceptedMessage>(ouchMessage, stat) ||
+                tryParse<OUCHCanceledMessage>(ouchMessage, stat) ||
+                tryParse<OUCHExecutedMessage>(ouchMessage, stat) ||
+                tryParse<OUCHReplacedMessage>(ouchMessage, stat) ||
+                tryParse<OUCHSystemEventMessage>(ouchMessage, stat);
 
-    if (!parsed)
-    {
-      ERROR_OUTPUT("--- ERROR: Unexpected OUCH message: size = " << ouchMessage.size() << ", msgType = " << ouchMessage[3] << " ---\n");
-    }
+  if (!parsed)
+  {
+    ERROR_OUTPUT("--- ERROR: Unexpected OUCH message: size = " << ouchMessage.size() << ", msgType = " << ouchMessage[3] << " ---\n");
+  }
 }
 
 /*
@@ -102,7 +103,7 @@ void ouchParser::getPacketState(const Packet& packet, OuchMessageState& ouchMsgS
     return;
   }
 
-  if (packetSize >= 2 && 
+  if (packetSize >= 2 &&
       getOuchMsgLength(packet) == (packetSize - 2)) // The packet size excludes the OUCH Message Length field (2 bytes)
   {
     updateOuchMsgState(OuchMessageState::COMPLETE, ouchMsgState);
@@ -129,13 +130,13 @@ Packet& ouchParser::combineTwoPackets(const Packet first, const Packet second)
   return combinedPacket;
 }
 /*
- * Go through all the packets in one stream and parse it 
+ * Go through all the packets in one stream and parse it
  * when it's ready (ouchMsgState in [OuchMessageState::COMPLETE, OuchMessageState::PARTIAL_TO_FULL])
  */
 void ouchParser::parsePackets(const uint16_t streamId, const Packets& packets)
 {
   OuchMessageState ouchMsgState{OuchMessageState::UNKNOWN};
-  for (size_t i = 0; i < packets.size(); ++i) 
+  for (size_t i = 0; i < packets.size(); ++i)
   {
     OUTPUT("--- Packet " << i << " (" << packets[i].size() << " bytes) ---\n");
     getPacketState(packets[i], ouchMsgState);
@@ -157,7 +158,7 @@ void ouchParser::parsePackets(const uint16_t streamId, const Packets& packets)
 // Parse streams and save all the OUCH packets information into m_stats
 void ouchParser::parseStreams()
 {
-  for (const auto& [streamId, packets] : m_streams) 
+  for (const auto& [streamId, packets] : m_streams)
   {
     OUTPUT("===== Stream " << streamId << " (" << packets.size() << " packets) =====\n");
     parsePackets(streamId, packets);
@@ -172,19 +173,19 @@ void ouchParser::loadPacketFileIntoMap()
   while (m_file.read(reinterpret_cast<char*>(&streamIdBE), 2) &&    // The first 2 bytes - Stream Identifier
          m_file.read(reinterpret_cast<char*>(&payloadLengthBE), 4)) // The next 4 bytes  - Packet Length
   {
-      // Convert Big Endian -> Host byte order
-      const uint16_t streamId = ntohs(streamIdBE);
-      const uint32_t payload_length = ntohl(payloadLengthBE);
+    // Convert Big Endian -> Host byte order
+    const uint16_t streamId = ntohs(streamIdBE);
+    const uint32_t payload_length = ntohl(payloadLengthBE);
 
-      // Read payload (OUCH message)
-      Packet payload(payload_length);
-      if (!m_file.read(reinterpret_cast<char*>(payload.data()), payload_length)) {
-          std::cerr << "File truncated or corrupted\n";
-          break;
-      }
+    // Read payload (OUCH message)
+    Packet payload(payload_length);
+    if (!m_file.read(reinterpret_cast<char*>(payload.data()), payload_length)) {
+      std::cerr << "File truncated or corrupted\n";
+      break;
+    }
 
-      // Store payload (OUCH message) into streams map
-      m_streams[streamId].push_back(std::move(payload));
+    // Store payload (OUCH message) into streams map
+    m_streams[streamId].push_back(std::move(payload));
   }
 }
 
