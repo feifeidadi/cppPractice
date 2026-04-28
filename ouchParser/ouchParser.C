@@ -3,11 +3,12 @@
 
 void ouchParser::updateOuchMsgState(const OuchMessageState newOuchMsgState, OuchMessageState& ouchMsgState)
 {
-  static const std::unordered_map<OuchMessageState, std::string_view> stateMsgMap = {
-    {OuchMessageState::COMPLETE, "--- Full OUCH protocol message ---\n"},
-    {OuchMessageState::PARTIAL, "--- Part (1/2) OUCH protocol message ---\n"},
-    {OuchMessageState::PARTIAL_TO_FULL, "--- Part (2/2) OUCH protocol message ---\n"},
-    {OuchMessageState::EMPTY, "--- Empty OUCH protocol message ---\n"},
+  static const std::string msg{"OUCH protocol message ---\n"};
+  static const std::unordered_map<OuchMessageState, std::string> stateMsgMap = {
+    {OuchMessageState::COMPLETE, "--- Full " + msg},
+    {OuchMessageState::PARTIAL, "--- Part (1/2) "  + msg},
+    {OuchMessageState::PARTIAL_TO_FULL, "--- Part (2/2) " + msg},
+    {OuchMessageState::EMPTY, "--- Empty " + msg},
   };
 
   const auto& it = stateMsgMap.find(newOuchMsgState);
@@ -101,16 +102,14 @@ void ouchParser::getPacketState(const Packet& packet, OuchMessageState& ouchMsgS
     return;
   }
 
-  if (packetSize >= 2)
+  if (packetSize >= 2 && 
+      getOuchMsgLength(packet) == (packetSize - 2)) // The packet size excludes the OUCH Message Length field (2 bytes)
   {
-    const auto ouchMsgLenth = getOuchMsgLength(packet);
-    if (ouchMsgLenth == (packetSize - 2)) // The packet size excludes the OUCH Message Length field
-    {
-      updateOuchMsgState(OuchMessageState::COMPLETE, ouchMsgState);
-      return;
-    }
+    updateOuchMsgState(OuchMessageState::COMPLETE, ouchMsgState);
+    return;
   }
 
+  // Default is partial if ouchMsgState not in [EMPTY, PARTIAL_TO_FULL, COMPLETE]
   updateOuchMsgState(OuchMessageState::PARTIAL, ouchMsgState);
 }
 
@@ -125,7 +124,7 @@ Packet& ouchParser::combineTwoPackets(const Packet first, const Packet second)
   const auto ouchMsgLenth = getOuchMsgLength(combinedPacket);
   OUTPUT("--- Combined packet size: " << combinedPacket.size() << " bytes) ---\n");
 
-  assert(ouchMsgLenth == (combinedPacket.size()-2) && "Packet size and OUCH message size mismatch.");
+  assert(ouchMsgLenth == (combinedPacket.size() - 2) && "Packet size and OUCH message size mismatch.");
 
   return combinedPacket;
 }
