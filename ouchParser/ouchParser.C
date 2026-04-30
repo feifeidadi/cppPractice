@@ -9,7 +9,6 @@ void ouchParser::printOuchMsgState([[maybe_unused]]const OuchMessageState ouchMs
     {OuchMessageState::COMPLETE, "Full " + msg},
     {OuchMessageState::PARTIAL, "Part (1/2) "  + msg},
     {OuchMessageState::PARTIAL_TO_FULL, "Part (2/2) " + msg},
-    {OuchMessageState::EMPTY, "Empty message"},
   };
 
   const auto& it = stateMsgMap.find(ouchMsgState);
@@ -73,7 +72,7 @@ bool ouchParser::tryParse(const Packet& ouchMessage, PkgCaptureStats& stat)
   return false;
 }
 
-void ouchParser::parsePacket(const Packet& ouchMessage, PkgCaptureStats& stat)
+void ouchParser::parseFullPacket(const Packet& ouchMessage, PkgCaptureStats& stat)
 {
   bool parsed = tryParse<OUCHAcceptedMessage>(ouchMessage, stat) ||
                 tryParse<OUCHCanceledMessage>(ouchMessage, stat) ||
@@ -90,25 +89,19 @@ void ouchParser::parsePacket(const Packet& ouchMessage, PkgCaptureStats& stat)
 /*
  * This is the key function to determine if the packet is full or parital.
  * The packet is ready to parse only if ouchMsgState is PARTIAL_TO_FULL or COMPLETE
- * Empty packet will be ignored.
  * It will return PARTIAL_TO_FULL if the previous packet is a partial OUCH msg
  * Ensure packet size >= 2 before getting the msg length is mandatory, because the first two bytes contain the OUCH Message Length field
+ * Empty packet has already been filtered.
  */
 void ouchParser::getPacketState(const Packet& packet, OuchMessageState& ouchMsgState)
 {
-  const auto packetSize = packet.size();
-  if (packetSize == 0) // Ignore empty packet
-  {
-    updateOuchMsgState(OuchMessageState::EMPTY, ouchMsgState);
-    return;
-  }
-
   if (OuchMessageState::PARTIAL == ouchMsgState) // Previous packet is a partial OUCH message
   {
     updateOuchMsgState(OuchMessageState::PARTIAL_TO_FULL, ouchMsgState); // Packet 1/2 + Packet 2/2 => Full OUCH msg
     return;
   }
 
+  const auto packetSize = packet.size();
   if (packetSize >= 2 &&
       getOuchMsgLength(packet) == (packetSize - 2)) // The packet size excludes the OUCH Message Length field (2 bytes)
   {
@@ -135,29 +128,47 @@ Packet& ouchParser::combineTwoPackets(const Packet first, const Packet second)
 
   return combinedPacket;
 }
+
+/*
+ * Get packet state and parse it if ouchMsgState in [OuchMessageState::COMPLETE, OuchMessageState::PARTIAL_TO_FULL]
+ */
+void ouchParser::parsePacket(const Packet& packet, PkgCaptureStats& stat)
+{
+  static OuchMessageState ouchMsgState{OuchMessageState::UNKNOWN};
+  static Packet *partialPacket{nullptr};
+
+  getPacketState(packet, ouchMsgState);
+  if (ouchMsgState == OuchMessageState::COMPLETE ||
+      ouchMsgState == OuchMessageState::PARTIAL_TO_FULL)
+  {
+    const auto& pkt = partialPacket == nullptr ? packet /* COMPLETE OUCH message */ :
+                                                 // Combine previous previous and current packet to get a full OUCH message
+                                                 combineTwoPackets(*partialPacket, packet);
+    parseFullPacket(pkt, stat);
+    ouchMsgState = OuchMessageState::UNKNOWN; // Rest ouchMsgState
+    partialPacket = nullptr; // Actually it's only needed if ouchMsgState == OuchMessageState::PARTIAL_TO_FULL
+  }
+  else if (ouchMsgState == OuchMessageState::PARTIAL)
+  {
+    // Save partial packet address, it will be used to combine with the next packet to get a full packet
+    partialPacket = const_cast<Packet*>(&packet);
+  }
+}
+
 /*
  * Go through all the packets in one stream and parse it
- * when it's ready (ouchMsgState in [OuchMessageState::COMPLETE, OuchMessageState::PARTIAL_TO_FULL])
  */
 void ouchParser::parsePackets(const Packets& packets, PkgCaptureStats& stat)
 {
-  OuchMessageState ouchMsgState{OuchMessageState::UNKNOWN};
   for (size_t i = 0; i < packets.size(); ++i)
   {
+    if (packets[i].size() == 0)
+    {
+      OUTPUT("Empty packet (0 bytes), skipped");
+      continue;
+    }
     OUTPUT("Packet " << i << " (" << packets[i].size() << " bytes)");
-    getPacketState(packets[i], ouchMsgState);
-    if (ouchMsgState == OuchMessageState::COMPLETE) // Full OUCH protocol message
-    {
-      parsePacket(packets[i], stat);
-      ouchMsgState = OuchMessageState::UNKNOWN; // Rest ouchMsgState
-    }
-    else if (ouchMsgState == OuchMessageState::PARTIAL_TO_FULL)
-    {
-      // Append current packet at the end of previous one to get a full OUCH message
-      const auto& pkt = combineTwoPackets(packets[i-1], packets[i]);
-      parsePacket(pkt, stat);
-      ouchMsgState = OuchMessageState::UNKNOWN; // Rest ouchMsgState
-    }
+    parsePacket(packets[i], stat);
   }
 }
 

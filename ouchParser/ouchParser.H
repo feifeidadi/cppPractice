@@ -90,7 +90,8 @@ private:
   void initPkgCaptureStats();
   void parseStreams();
   void parsePackets(const Packets& packets, PkgCaptureStats& stat);
-  void parsePacket(const Packet& ouchMessage, PkgCaptureStats& stat);
+  void parsePacket(const Packet& packet, PkgCaptureStats& stat);
+  void parseFullPacket(const Packet& ouchMessage, PkgCaptureStats& stat);
   void printOuchMsgState(const OuchMessageState ouchMsgState);
 
   template <typename T>
