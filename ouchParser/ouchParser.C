@@ -28,7 +28,7 @@ void ouchParser::updateOuchMsgState(const OuchMessageState newOuchMsgState, Ouch
 uint16_t ouchParser::getOuchMsgLength(const Packet& packet)
 {
   uint16_t OuchMsgLenthBE;
-  std::memcpy(&OuchMsgLenthBE, packet.data(), 2);
+  std::memcpy(&OuchMsgLenthBE, packet.data(), OUCH_MSG_LENGTH_FIELD_SIZE);
   return ntohs(OuchMsgLenthBE); // Convert Big Endian -> Host byte order
 }
 
@@ -86,12 +86,28 @@ void ouchParser::parseFullPacket(const Packet& ouchMessage, PkgCaptureStats& sta
   }
 }
 
+bool ouchParser::isCompletePacket(const Packet& packet)
+{
+  const auto packetSize = packet.size();
+  if (packetSize >= OUCH_MSG_LENGTH_FIELD_SIZE &&
+      getOuchMsgLength(packet) == (packetSize - OUCH_MSG_LENGTH_FIELD_SIZE)) // The packet size excludes the OUCH Message Length field (2 bytes)
+  {
+    return true;
+  }
+
+  return false;
+}
+
 /*
  * This is the key function to determine if the packet is full or parital.
- * The packet is ready to parse only if ouchMsgState is PARTIAL_TO_FULL or COMPLETE
- * It will return PARTIAL_TO_FULL if the previous packet is a partial OUCH msg
  * Ensure packet size >= 2 before getting the msg length is mandatory, because the first two bytes contain the OUCH Message Length field
  * Empty packet has already been filtered.
+ *
+ * Input: packet, ouchMsgState (indicating if previous packet is a partial ouch message)
+ * Output:
+ *   ouchMsgState:
+ *     PARTIAL_TO_FULL or COMPLETE: packet is ready to parse
+ *     PARTIAL                    : Packet 1/2, wait for packet 2/2
  */
 void ouchParser::getPacketState(const Packet& packet, OuchMessageState& ouchMsgState)
 {
@@ -101,15 +117,13 @@ void ouchParser::getPacketState(const Packet& packet, OuchMessageState& ouchMsgS
     return;
   }
 
-  const auto packetSize = packet.size();
-  if (packetSize >= 2 &&
-      getOuchMsgLength(packet) == (packetSize - 2)) // The packet size excludes the OUCH Message Length field (2 bytes)
+  if (isCompletePacket(packet))
   {
-    updateOuchMsgState(OuchMessageState::COMPLETE, ouchMsgState); // The packet contains a complete ouch message
+    updateOuchMsgState(OuchMessageState::COMPLETE, ouchMsgState);
     return;
   }
 
-  // Default is partial if ouchMsgState not in [EMPTY, PARTIAL_TO_FULL, COMPLETE]
+  // Default is partial if ouchMsgState is not PARTIAL_TO_FULL or COMPLETE
   updateOuchMsgState(OuchMessageState::PARTIAL, ouchMsgState);
 }
 
@@ -124,7 +138,7 @@ Packet& ouchParser::combineTwoPackets(const Packet first, const Packet second)
   const auto ouchMsgLenth = getOuchMsgLength(combinedPacket);
   OUTPUT("Combined packet size: " << combinedPacket.size() << " bytes)");
 
-  assert(ouchMsgLenth == (combinedPacket.size() - 2) && "Packet size and OUCH message size mismatch.");
+  assert(ouchMsgLenth == (combinedPacket.size() - OUCH_MSG_LENGTH_FIELD_SIZE) && "Packet size and OUCH message size mismatch.");
 
   return combinedPacket;
 }
@@ -147,12 +161,11 @@ void ouchParser::parsePacket(const Packet& packet, PkgCaptureStats& stat)
     parseFullPacket(pkt, stat);
     ouchMsgState = OuchMessageState::UNKNOWN; // Rest ouchMsgState
     partialPacket = nullptr; // Actually it's only needed if ouchMsgState == OuchMessageState::PARTIAL_TO_FULL
+    return;
   }
-  else if (ouchMsgState == OuchMessageState::PARTIAL)
-  {
-    // Save partial packet address, it will be used to combine with the next packet to get a full packet
-    partialPacket = const_cast<Packet*>(&packet);
-  }
+
+  // ouchMsgState == OuchMessageState::PARTIAL, saving partial packet address
+  partialPacket = const_cast<Packet*>(&packet);
 }
 
 /*
@@ -187,8 +200,8 @@ void ouchParser::loadPacketFileIntoMap()
 {
   uint16_t streamIdBE{0};
   uint32_t payloadLengthBE{0};
-  while (m_file.read(reinterpret_cast<char*>(&streamIdBE), 2) &&    // The first 2 bytes - Stream Identifier
-         m_file.read(reinterpret_cast<char*>(&payloadLengthBE), 4)) // The next 4 bytes  - Packet Length
+  while (m_file.read(reinterpret_cast<char*>(&streamIdBE), STREAM_IDENTIFIER_FIELD_SIZE) &&    // The first 2 bytes - Stream Identifier
+         m_file.read(reinterpret_cast<char*>(&payloadLengthBE), PACKET_LENGTH_FIELD_SIZE)) // The next 4 bytes  - Packet Length
   {
     // Convert Big Endian -> Host byte order
     const uint16_t streamId = ntohs(streamIdBE);

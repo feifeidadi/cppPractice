@@ -4,6 +4,10 @@
 #include <unordered_map>
 #include <cassert>
 
+#define OUCH_MSG_LENGTH_FIELD_SIZE   2 // Bytes
+#define STREAM_IDENTIFIER_FIELD_SIZE 2 // Bytes
+#define PACKET_LENGTH_FIELD_SIZE     4 // Bytes
+
 enum OuchMessageType
 {
   SYSTEM_EVENT = 'S',

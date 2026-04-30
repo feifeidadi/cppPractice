@@ -91,6 +91,7 @@ private:
   void parseStreams();
   void parsePackets(const Packets& packets, PkgCaptureStats& stat);
   void parsePacket(const Packet& packet, PkgCaptureStats& stat);
+  bool isCompletePacket(const Packet& packet);
   void parseFullPacket(const Packet& ouchMessage, PkgCaptureStats& stat);
   void printOuchMsgState(const OuchMessageState ouchMsgState);
 
