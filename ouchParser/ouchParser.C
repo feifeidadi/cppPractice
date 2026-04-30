@@ -1,23 +1,29 @@
 #include "ouchParser.H"
 #include "hexDump.H"
 
-void ouchParser::updateOuchMsgState(const OuchMessageState newOuchMsgState, OuchMessageState& ouchMsgState)
+void ouchParser::printOuchMsgState([[maybe_unused]]const OuchMessageState ouchMsgState)
 {
-  static const std::string msg{"OUCH protocol message ---\n"};
+#ifdef DEBUG
+  static const std::string msg{"OUCH protocol message"};
   static const std::unordered_map<OuchMessageState, std::string> stateMsgMap = {
-    {OuchMessageState::COMPLETE, "--- Full " + msg},
-    {OuchMessageState::PARTIAL, "--- Part (1/2) "  + msg},
-    {OuchMessageState::PARTIAL_TO_FULL, "--- Part (2/2) " + msg},
-    {OuchMessageState::EMPTY, "--- Empty " + msg},
+    {OuchMessageState::COMPLETE, "Full " + msg},
+    {OuchMessageState::PARTIAL, "Part (1/2) "  + msg},
+    {OuchMessageState::PARTIAL_TO_FULL, "Part (2/2) " + msg},
+    {OuchMessageState::EMPTY, "Empty message"},
   };
 
-  const auto& it = stateMsgMap.find(newOuchMsgState);
+  const auto& it = stateMsgMap.find(ouchMsgState);
   if (it != stateMsgMap.end())
   {
     OUTPUT(it->second);
   }
+#endif
+}
 
+void ouchParser::updateOuchMsgState(const OuchMessageState newOuchMsgState, OuchMessageState& ouchMsgState)
+{
   ouchMsgState = newOuchMsgState;
+  printOuchMsgState(ouchMsgState);
 }
 
 uint16_t ouchParser::getOuchMsgLength(const Packet& packet)
@@ -43,10 +49,10 @@ template <typename T>
 void ouchParser::parseOuchMessage(const T ouchMessage, PkgCaptureStats& stat)
 {
   const auto msgType = ouchMessage->getMessageType();
-  OUTPUT("--- Ouch " << ouchMessage->getMessageTypeStr(static_cast<OuchMessageType>(msgType)) << " message ---\n");
+  OUTPUT("Ouch " << ouchMessage->getMessageTypeStr(static_cast<OuchMessageType>(msgType)) << " message");
   if (msgType == OuchMessageType::EXECUTED)
   {
-    OUTPUT("---  " << ouchMessage->getShares() << " shares executed ---\n");
+    OUTPUT(ouchMessage->getShares() << " shares executed");
     stat.increaseExecutedShares(ouchMessage->getShares());
     m_allPkgCaptureStats.increaseExecutedShares(ouchMessage->getShares());
   }
@@ -77,7 +83,7 @@ void ouchParser::parsePacket(const Packet& ouchMessage, PkgCaptureStats& stat)
 
   if (!parsed)
   {
-    ERROR_OUTPUT("--- ERROR: Unexpected OUCH message: size = " << ouchMessage.size() << ", msgType = " << ouchMessage[3] << " ---\n");
+    ERROR_OUTPUT("ERROR: Unexpected OUCH message: size = " << ouchMessage.size() << ", msgType = " << ouchMessage[3]);
   }
 }
 
@@ -106,7 +112,7 @@ void ouchParser::getPacketState(const Packet& packet, OuchMessageState& ouchMsgS
   if (packetSize >= 2 &&
       getOuchMsgLength(packet) == (packetSize - 2)) // The packet size excludes the OUCH Message Length field (2 bytes)
   {
-    updateOuchMsgState(OuchMessageState::COMPLETE, ouchMsgState);
+    updateOuchMsgState(OuchMessageState::COMPLETE, ouchMsgState); // The packet contains a complete ouch message
     return;
   }
 
@@ -123,7 +129,7 @@ Packet& ouchParser::combineTwoPackets(const Packet first, const Packet second)
   combinedPacket.insert(combinedPacket.end(), second.begin(), second.end());
 
   const auto ouchMsgLenth = getOuchMsgLength(combinedPacket);
-  OUTPUT("--- Combined packet size: " << combinedPacket.size() << " bytes) ---\n");
+  OUTPUT("Combined packet size: " << combinedPacket.size() << " bytes)");
 
   assert(ouchMsgLenth == (combinedPacket.size() - 2) && "Packet size and OUCH message size mismatch.");
 
@@ -133,23 +139,23 @@ Packet& ouchParser::combineTwoPackets(const Packet first, const Packet second)
  * Go through all the packets in one stream and parse it
  * when it's ready (ouchMsgState in [OuchMessageState::COMPLETE, OuchMessageState::PARTIAL_TO_FULL])
  */
-void ouchParser::parsePackets(const uint16_t streamId, const Packets& packets)
+void ouchParser::parsePackets(const Packets& packets, PkgCaptureStats& stat)
 {
   OuchMessageState ouchMsgState{OuchMessageState::UNKNOWN};
   for (size_t i = 0; i < packets.size(); ++i)
   {
-    OUTPUT("--- Packet " << i << " (" << packets[i].size() << " bytes) ---\n");
+    OUTPUT("Packet " << i << " (" << packets[i].size() << " bytes)");
     getPacketState(packets[i], ouchMsgState);
     if (ouchMsgState == OuchMessageState::COMPLETE) // Full OUCH protocol message
     {
-      parsePacket(packets[i], m_stats[streamId]);
+      parsePacket(packets[i], stat);
       ouchMsgState = OuchMessageState::UNKNOWN; // Rest ouchMsgState
     }
     else if (ouchMsgState == OuchMessageState::PARTIAL_TO_FULL)
     {
       // Append current packet at the end of previous one to get a full OUCH message
       const auto& pkt = combineTwoPackets(packets[i-1], packets[i]);
-      parsePacket(pkt, m_stats[streamId]);
+      parsePacket(pkt, stat);
       ouchMsgState = OuchMessageState::UNKNOWN; // Rest ouchMsgState
     }
   }
@@ -160,8 +166,8 @@ void ouchParser::parseStreams()
 {
   for (const auto& [streamId, packets] : m_streams)
   {
-    OUTPUT("===== Stream " << streamId << " (" << packets.size() << " packets) =====\n");
-    parsePackets(streamId, packets);
+    OUTPUT("Stream " << streamId << " (" << packets.size() << " packets)");
+    parsePackets(packets, m_stats[streamId]);
   }
 }
 
@@ -191,10 +197,10 @@ void ouchParser::loadPacketFileIntoMap()
 
 void ouchParser::initPkgCaptureStats()
 {
-  OUTPUT("Number of streams: " << m_streams.size() << "\n");
+  OUTPUT("Number of streams: " << m_streams.size());
   for (const auto& [streamId, packets] : m_streams)
   {
-    OUTPUT("Stream " << streamId << " -> " << packets.size() << " packets\n");
+    OUTPUT("Stream " << streamId << " -> " << packets.size() << " packets");
     // Initialize PkgCaptureStats for each stream, all zero at this moment
     m_stats.emplace(streamId, PkgCaptureStats{});
   }

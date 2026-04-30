@@ -9,8 +9,8 @@
 #include "ouchProtocol.H"
 
 #ifdef DEBUG
-    #define OUTPUT(x) do       { std::cout << x; } while(0)
-    #define ERROR_OUTPUT(x) do { std::cerr << x; } while(0)
+    #define OUTPUT(x) do       { std::cout << x << std::endl; } while(0)
+    #define ERROR_OUTPUT(x) do { std::cerr << x << std::endl; } while(0)
 #else
     #define OUTPUT(x) do { } while(0)
     #define ERROR_OUTPUT(x)  do { } while(0)
@@ -85,13 +85,13 @@ public:
   void printStats() const;
 
 private:
-  //void hexDump([[maybe_unused]]const Packet& data);
   int  parsePacketFile();
   void loadPacketFileIntoMap();
   void initPkgCaptureStats();
   void parseStreams();
-  void parsePackets(const uint16_t streamId, const Packets& packets);
+  void parsePackets(const Packets& packets, PkgCaptureStats& stat);
   void parsePacket(const Packet& ouchMessage, PkgCaptureStats& stat);
+  void printOuchMsgState(const OuchMessageState ouchMsgState);
 
   template <typename T>
   void parseOuchMessage(const T ouchMessage, PkgCaptureStats& stat);
