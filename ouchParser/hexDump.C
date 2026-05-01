@@ -1,6 +1,7 @@
 #include <iomanip>
 #include "hexDump.H"
 
+#ifdef DEBUG
 static constexpr size_t bytesPerLine = 16;
 void printLeadingSpaces(const uint8_t numLeadingSpace)
 {
@@ -37,9 +38,8 @@ void printHexAndAscii(const uint8_t *data, const size_t size)
   printASCII(data, size);
 }
 
-void hexDump([[maybe_unused]]const uint8_t *data, [[maybe_unused]]const size_t size)
+void hexDump(const uint8_t *data, const size_t size)
 {
-#ifdef DEBUG
   for (size_t i = 0; i < size; i+=bytesPerLine)
   {
     printHexAndAscii(data + i, 
@@ -48,5 +48,10 @@ void hexDump([[maybe_unused]]const uint8_t *data, [[maybe_unused]]const size_t s
   }
 
   printf("\n");
-#endif
 }
+
+#else
+void hexDump([[maybe_unused]]const uint8_t *data, [[maybe_unused]]const size_t size)
+{
+}
+#endif
