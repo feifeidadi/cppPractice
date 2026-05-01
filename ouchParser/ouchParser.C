@@ -11,8 +11,7 @@ void ouchParser::printOuchMsgState([[maybe_unused]]const OuchMessageState ouchMs
     {OuchMessageState::PARTIAL_TO_FULL, "Part (2/2) " + msg},
   };
 
-  const auto& it = stateMsgMap.find(ouchMsgState);
-  if (it != stateMsgMap.end())
+  if (const auto& it = stateMsgMap.find(ouchMsgState); it != stateMsgMap.end())[[likely]]
   {
     OUTPUT(it->second);
   }
@@ -209,7 +208,7 @@ void ouchParser::loadPacketFileIntoMap()
 
     // Read payload (OUCH message)
     Packet payload(payload_length);
-    if (!m_file.read(reinterpret_cast<char*>(payload.data()), payload_length)) {
+    if (!m_file.read(reinterpret_cast<char*>(payload.data()), payload_length)) [[unlikely]] {
       std::cerr << "File truncated or corrupted\n";
       break;
     }
