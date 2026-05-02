@@ -105,6 +105,9 @@ private:
   void getPacketState(const Packet& packet, OuchMessageState& ouchMsgState);
   Packet& combineTwoPackets(const Packet first, const Packet second);
   void updateOuchMsgState(const OuchMessageState newOuchsgState, OuchMessageState& ouchMsgState);
+  void increaseExecutedShares(PkgCaptureStats& stat, uint32_t execShares);
+  void increaseNumMsgs(PkgCaptureStats& stat, char msgType);
+  bool isExecutedOuchMessage(const char msgType) { return msgType == OuchMessageType::EXECUTED; }
 
   std::ifstream m_file;
   Streams m_streams;

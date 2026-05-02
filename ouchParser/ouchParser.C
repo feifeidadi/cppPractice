@@ -43,19 +43,29 @@ void ouchParser::printStats() const
   m_allPkgCaptureStats.printInfo();
 }
 
+void ouchParser::increaseExecutedShares(PkgCaptureStats& stat, uint32_t execShares)
+{
+  OUTPUT(execShares << " shares executed");
+  stat.increaseExecutedShares(execShares);
+  m_allPkgCaptureStats.increaseExecutedShares(execShares);
+}
+
+void ouchParser::increaseNumMsgs(PkgCaptureStats& stat, char msgType)
+{
+  stat.increaseNumMsgs(msgType);
+  m_allPkgCaptureStats.increaseNumMsgs(msgType);
+}
+
 template <typename T>
 void ouchParser::parseOuchMessage(const T ouchMessage, PkgCaptureStats& stat)
 {
   const auto msgType = ouchMessage->getMessageType();
   OUTPUT("Ouch " << ouchMessage->getMessageTypeStr(static_cast<OuchMessageType>(msgType)) << " message");
-  if (msgType == OuchMessageType::EXECUTED)
+  if (isExecutedOuchMessage(msgType))
   {
-    OUTPUT(ouchMessage->getShares() << " shares executed");
-    stat.increaseExecutedShares(ouchMessage->getShares());
-    m_allPkgCaptureStats.increaseExecutedShares(ouchMessage->getShares());
+    increaseExecutedShares(stat, ouchMessage->getShares());
   }
-  stat.increaseNumMsgs(msgType);
-  m_allPkgCaptureStats.increaseNumMsgs(msgType);
+  increaseNumMsgs(stat, msgType);
 }
 
 template<typename T>
