@@ -154,6 +154,7 @@ Packet& ouchParser::combineTwoPackets(const Packet first, const Packet second)
 
 /*
  * Return a full packet if ouchMsgState is COMPLETE or PARTIAL_TO_FULL
+ * Otherwise return an empty packet (ouchMsgState == PARTIAL)
  */
 Packet& ouchParser::getFullPkt(const Packet& packet, const Packet *partialPacket, OuchMessageState& ouchMsgState)
 {
