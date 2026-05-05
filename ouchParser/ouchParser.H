@@ -103,6 +103,7 @@ private:
 
   inline uint16_t getOuchMsgLength(const Packet& packet);
   void getPacketState(const Packet& packet, OuchMessageState& ouchMsgState);
+  Packet& getFullPkt(const Packet& packet, const Packet *partialPacket, OuchMessageState& ouchMsgState);
   Packet& combineTwoPackets(const Packet first, const Packet second);
   void updateOuchMsgState(const OuchMessageState newOuchsgState, OuchMessageState& ouchMsgState);
   void increaseExecutedShares(PkgCaptureStats& stat, uint32_t execShares);

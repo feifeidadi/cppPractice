@@ -153,27 +153,40 @@ Packet& ouchParser::combineTwoPackets(const Packet first, const Packet second)
 }
 
 /*
- * Get packet state and parse it if ouchMsgState in [OuchMessageState::COMPLETE, OuchMessageState::PARTIAL_TO_FULL]
+ * Return a full packet if ouchMsgState is COMPLETE or PARTIAL_TO_FULL
  */
+Packet& ouchParser::getFullPkt(const Packet& packet, const Packet *partialPacket, OuchMessageState& ouchMsgState)
+{
+  static Packet emptyPkt{};
+  getPacketState(packet, ouchMsgState);
+  if (ouchMsgState == OuchMessageState::COMPLETE)
+  {
+    return const_cast<Packet&>(packet); // It's already a complete packet
+  }
+
+  if (ouchMsgState == OuchMessageState::PARTIAL_TO_FULL && partialPacket != nullptr)
+  {
+    return combineTwoPackets(*partialPacket, packet); // Combine previous and current packet to get a full OUCH packet
+  }
+
+  return emptyPkt;
+}
+
 void ouchParser::parsePacket(const Packet& packet, PkgCaptureStats& stat)
 {
   static OuchMessageState ouchMsgState{OuchMessageState::UNKNOWN};
   static Packet *partialPacket{nullptr};
 
-  getPacketState(packet, ouchMsgState);
-  if (ouchMsgState == OuchMessageState::COMPLETE ||
-      ouchMsgState == OuchMessageState::PARTIAL_TO_FULL)
+  const auto pkt = getFullPkt(packet, partialPacket, ouchMsgState);
+  if (not pkt.empty())
   {
-    const auto& pkt = partialPacket == nullptr ? packet /* COMPLETE OUCH message */ :
-                                                 // Combine previous previous and current packet to get a full OUCH message
-                                                 combineTwoPackets(*partialPacket, packet);
     parseFullPacket(pkt, stat);
     ouchMsgState = OuchMessageState::UNKNOWN; // Rest ouchMsgState
     partialPacket = nullptr; // Actually it's only needed if ouchMsgState == OuchMessageState::PARTIAL_TO_FULL
     return;
   }
 
-  // ouchMsgState == OuchMessageState::PARTIAL, saving partial packet address
+  // Must be a partial packet (ouchMsgState == OuchMessageState::PARTIAL), saving it's address
   partialPacket = const_cast<Packet*>(&packet);
 }
 
