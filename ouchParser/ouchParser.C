@@ -218,27 +218,39 @@ void ouchParser::parseStreams()
   }
 }
 
+/*
+ *  Return values:
+ *    -1: Failed to save the packet into map
+ *     0: Success
+ */
+int ouchParser::savePacketIntoMap(std::ifstream& ifs, const uint16_t streamId, const uint32_t packetLength)
+{
+  Packet pkt(packetLength);
+  if (!ifs.read(reinterpret_cast<char*>(pkt.data()), packetLength)) [[unlikely]] // Read OUCH message packet
+  {
+    std::cerr << "File truncated or corrupted\n";
+    return -1;
+  }
+
+  // Store packet (OUCH message) into streams map
+  m_streams[streamId].push_back(std::move(pkt));
+
+  return 0;
+}
+
 // Read packet capture file and store all the packets into m_streams
 void ouchParser::loadPacketFileIntoMap()
 {
   uint16_t streamIdBE{0};
   uint32_t payloadLengthBE{0};
-  while (m_file.read(reinterpret_cast<char*>(&streamIdBE), STREAM_IDENTIFIER_FIELD_SIZE) &&    // The first 2 bytes - Stream Identifier
-         m_file.read(reinterpret_cast<char*>(&payloadLengthBE), PACKET_LENGTH_FIELD_SIZE)) // The next 4 bytes  - Packet Length
+  while (m_file.read(reinterpret_cast<char*>(&streamIdBE), STREAM_IDENTIFIER_FIELD_SIZE) && // The first 2 bytes - Stream Identifier
+         m_file.read(reinterpret_cast<char*>(&payloadLengthBE), PACKET_LENGTH_FIELD_SIZE))  // The next 4 bytes  - Packet Length
   {
-    // Convert Big Endian -> Host byte order
-    const uint16_t streamId = ntohs(streamIdBE);
-    const uint32_t payload_length = ntohl(payloadLengthBE);
-
-    // Read payload (OUCH message)
-    Packet payload(payload_length);
-    if (!m_file.read(reinterpret_cast<char*>(payload.data()), payload_length)) [[unlikely]] {
-      std::cerr << "File truncated or corrupted\n";
-      break;
+    // ntohs()/ntohl() APIs Convert Big Endian -> Host byte order
+    if (savePacketIntoMap(m_file, ntohs(streamIdBE), ntohl(payloadLengthBE)) < 0)
+    {
+      break; // Something wrong in the packet file
     }
-
-    // Store payload (OUCH message) into streams map
-    m_streams[streamId].push_back(std::move(payload));
   }
 }
 

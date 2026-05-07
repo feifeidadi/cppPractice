@@ -88,6 +88,7 @@ private:
   int  parsePacketFile();
   void loadPacketFileIntoMap();
   void initPkgCaptureStats();
+  int  savePacketIntoMap(std::ifstream& ifs, const uint16_t streamId, const uint32_t packetLength);
   void parseStreams();
   void parsePackets(const Packets& packets, PkgCaptureStats& stat);
   void parsePacket(const Packet& packet, PkgCaptureStats& stat);
