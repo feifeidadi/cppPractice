@@ -156,7 +156,7 @@ const Packet& ouchParser::combineTwoPackets(const Packet& first, const Packet& s
  * Return a full packet if ouchMsgState is COMPLETE or PARTIAL_TO_FULL
  * Otherwise return an empty packet (ouchMsgState == PARTIAL)
  */
-const Packet& ouchParser::getFullPkt(const Packet& packet, const Packet *partialPacket, OuchMessageState& ouchMsgState)
+const Packet& ouchParser::getFullPkt(const Packet& packet, const std::optional<std::reference_wrapper<Packet>> partialPacket, OuchMessageState& ouchMsgState)
 {
   static Packet emptyPkt{};
   getPacketState(packet, ouchMsgState);
@@ -165,9 +165,9 @@ const Packet& ouchParser::getFullPkt(const Packet& packet, const Packet *partial
     return packet; // It's already a complete packet
   }
 
-  if (ouchMsgState == OuchMessageState::PARTIAL_TO_FULL && partialPacket != nullptr)
+  if (ouchMsgState == OuchMessageState::PARTIAL_TO_FULL && partialPacket)
   {
-    return combineTwoPackets(*partialPacket, packet); // Combine previous and current packet to get a full OUCH packet
+    return combineTwoPackets(partialPacket->get(), packet); // Combine previous and current packet to get a full OUCH packet
   }
 
   return emptyPkt;
@@ -176,19 +176,19 @@ const Packet& ouchParser::getFullPkt(const Packet& packet, const Packet *partial
 void ouchParser::parsePacket(const Packet& packet, PkgCaptureStats& stat)
 {
   static OuchMessageState ouchMsgState{OuchMessageState::UNKNOWN};
-  static Packet *partialPacket{nullptr};
+  static std::optional<std::reference_wrapper<Packet>> partialPacket;
 
   const auto pkt = getFullPkt(packet, partialPacket, ouchMsgState);
   if (not pkt.empty())
   {
     parseFullPacket(pkt, stat);
     ouchMsgState = OuchMessageState::UNKNOWN; // Rest ouchMsgState
-    partialPacket = nullptr; // Actually it's only needed if ouchMsgState == OuchMessageState::PARTIAL_TO_FULL
+    partialPacket.reset(); // Actually it's only needed if ouchMsgState == OuchMessageState::PARTIAL_TO_FULL
     return;
   }
 
-  // Must be a partial packet (ouchMsgState == OuchMessageState::PARTIAL), saving it's address
-  partialPacket = const_cast<Packet*>(&packet);
+  // Must be a partial packet (ouchMsgState == OuchMessageState::PARTIAL), save it in the reference
+  partialPacket = const_cast<Packet&>(packet);
 }
 
 /*

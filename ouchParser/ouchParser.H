@@ -4,6 +4,7 @@
 #include <fstream>
 #include <cstring>
 #include <cctype>
+#include <optional>
 #include <arpa/inet.h>
 
 #include "ouchProtocol.H"
@@ -104,7 +105,7 @@ private:
 
   inline uint16_t getOuchMsgLength(const Packet& packet);
   void getPacketState(const Packet& packet, OuchMessageState& ouchMsgState);
-  const Packet& getFullPkt(const Packet& packet, const Packet *partialPacket, OuchMessageState& ouchMsgState);
+  const Packet& getFullPkt(const Packet& packet, const std::optional<std::reference_wrapper<Packet>> partialPacket, OuchMessageState& ouchMsgState);
   const Packet& combineTwoPackets(const Packet& first, const Packet& second);
   void updateOuchMsgState(const OuchMessageState newOuchMsgState, OuchMessageState& ouchMsgState);
   void increaseExecutedShares(PkgCaptureStats& stat, uint32_t execShares);
