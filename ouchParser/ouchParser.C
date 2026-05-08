@@ -136,7 +136,7 @@ void ouchParser::getPacketState(const Packet& packet, OuchMessageState& ouchMsgS
   updateOuchMsgState(OuchMessageState::PARTIAL, ouchMsgState);
 }
 
-Packet& ouchParser::combineTwoPackets(const Packet first, const Packet second)
+Packet& ouchParser::combineTwoPackets(const Packet& first, const Packet& second)
 {
   static Packet combinedPacket;
   combinedPacket.clear();
