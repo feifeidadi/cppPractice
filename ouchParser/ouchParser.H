@@ -104,9 +104,9 @@ private:
 
   inline uint16_t getOuchMsgLength(const Packet& packet);
   void getPacketState(const Packet& packet, OuchMessageState& ouchMsgState);
-  Packet& getFullPkt(const Packet& packet, const Packet *partialPacket, OuchMessageState& ouchMsgState);
-  Packet& combineTwoPackets(const Packet& first, const Packet& second);
-  void updateOuchMsgState(const OuchMessageState newOuchsgState, OuchMessageState& ouchMsgState);
+  const Packet& getFullPkt(const Packet& packet, const Packet *partialPacket, OuchMessageState& ouchMsgState);
+  const Packet& combineTwoPackets(const Packet& first, const Packet& second);
+  void updateOuchMsgState(const OuchMessageState newOuchMsgState, OuchMessageState& ouchMsgState);
   void increaseExecutedShares(PkgCaptureStats& stat, uint32_t execShares);
   void increaseNumMsgs(PkgCaptureStats& stat, char msgType);
   bool isExecutedOuchMessage(const char msgType) { return msgType == OuchMessageType::EXECUTED; }

@@ -136,7 +136,7 @@ void ouchParser::getPacketState(const Packet& packet, OuchMessageState& ouchMsgS
   updateOuchMsgState(OuchMessageState::PARTIAL, ouchMsgState);
 }
 
-Packet& ouchParser::combineTwoPackets(const Packet& first, const Packet& second)
+const Packet& ouchParser::combineTwoPackets(const Packet& first, const Packet& second)
 {
   static Packet combinedPacket;
   combinedPacket.clear();
@@ -156,13 +156,13 @@ Packet& ouchParser::combineTwoPackets(const Packet& first, const Packet& second)
  * Return a full packet if ouchMsgState is COMPLETE or PARTIAL_TO_FULL
  * Otherwise return an empty packet (ouchMsgState == PARTIAL)
  */
-Packet& ouchParser::getFullPkt(const Packet& packet, const Packet *partialPacket, OuchMessageState& ouchMsgState)
+const Packet& ouchParser::getFullPkt(const Packet& packet, const Packet *partialPacket, OuchMessageState& ouchMsgState)
 {
   static Packet emptyPkt{};
   getPacketState(packet, ouchMsgState);
   if (ouchMsgState == OuchMessageState::COMPLETE)
   {
-    return const_cast<Packet&>(packet); // It's already a complete packet
+    return packet; // It's already a complete packet
   }
 
   if (ouchMsgState == OuchMessageState::PARTIAL_TO_FULL && partialPacket != nullptr)
