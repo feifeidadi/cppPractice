@@ -138,9 +138,8 @@ void ouchParser::getPacketState(const Packet& packet, OuchMessageState& ouchMsgS
 
 const Packet& ouchParser::combineTwoPackets(const Packet& first, const Packet& second)
 {
-  static Packet combinedPacket;
+  static Packet combinedPacket(MAX_OUCH_MSG_SIZE*2);
   combinedPacket.clear();
-  combinedPacket.reserve(first.size() + second.size());
   combinedPacket.insert(combinedPacket.end(), first.begin(), first.end());
   combinedPacket.insert(combinedPacket.end(), second.begin(), second.end());
 

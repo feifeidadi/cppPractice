@@ -160,5 +160,7 @@ struct OUCHCanceledMessage {
 };
 static_assert(sizeof(OUCHCanceledMessage) == 31, "OUCHCanceledMessage size is not 31 bytes");
 
+constexpr uint16_t MAX_OUCH_MSG_SIZE = sizeof(OUCHReplacedMessage);
+
 #pragma pack(pop)  // Restore original packing
 
