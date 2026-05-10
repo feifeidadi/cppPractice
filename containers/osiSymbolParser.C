@@ -106,7 +106,7 @@ class osiSymbolParser
     {
       // Fow now, only validate length, we can add more checks if needed.
       if (symbol_.length() > osiSymbolMaxLength ||
-          symbol_.length() < (osiSymbolMinLength - 5))
+          symbol_.length() < (osiSymbolMinLength))
       {
         std::cout << "Error: Invalid OSI symbol - " << symbol_ << std::endl;
         return false;
