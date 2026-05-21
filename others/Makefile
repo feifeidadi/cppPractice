@@ -1,14 +1,13 @@
 CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++17 -O2
 
-TARGETS = singleton thread
+SOURCES = $(wildcard *.C)
+
+TARGETS = $(patsubst %.C,%,$(SOURCES))
 
 all: $(TARGETS)
 
-singleton: singleton.C
-	$(CXX) $(CXXFLAGS) -o $@ $<
-
-thread: thread.C
+%: %.C
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 clean:
