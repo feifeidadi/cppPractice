@@ -29,6 +29,8 @@ int main()
 
   print(list1, "After merging list2 into list1:");
 
+  print(list2, "list2:");
+
   return 0;
 
 }
