@@ -16,6 +16,7 @@
 #include <iostream>
 #include <cstdint>
 #include <charconv> // std::from_chars()
+#include <string_view>
 
 struct osiSymbol
 {
@@ -34,7 +35,7 @@ struct osiSymbol
                 << std::endl;
     }
 
-    void getSymbol(const std::string& osiSymbol_)
+    void getSymbol(std::string_view osiSymbol_)
     {
       auto pos = osiSymbol_.find(' '); // Find symbol
       if (pos == std::string::npos)
@@ -45,7 +46,7 @@ struct osiSymbol
       symbol = osiSymbol_.substr(0, pos);
     }
 
-    void getOsiSymbolInfo(const std::string& osiSymbol_)
+    void getOsiSymbolInfo(std::string_view osiSymbol_)
     { 
       osiSymbolLen = osiSymbol_.length();
 
@@ -56,19 +57,19 @@ struct osiSymbol
     }
 
   private:
-    void getExpirationDate(const std::string& osiSymbol_)
+	void getExpirationDate(std::string_view osiSymbol_)
     {
       const size_t start = osiSymbolLen - strikePriceStrLen - 1 - expirationDateLength;
       expirationDate = osiSymbol_.substr(start, expirationDateLength);
     }
 
-    void getCallOrPut(const std::string& osiSymbol_)
+	void getCallOrPut(std::string_view osiSymbol_)
     {
       const auto pos = osiSymbolLen - strikePriceStrLen -1;
       callOrPut = osiSymbol_[pos];
     }
 
-    void getStrikePrice(const std::string& osiSymbol_)
+    void getStrikePrice(std::string_view osiSymbol_)
     {
       if (std::from_chars(osiSymbol_.data() + osiSymbolLen - strikePriceStrLen, osiSymbol_.data() + osiSymbolLen, strikePrice).ec != std::errc{})
       {
@@ -89,7 +90,7 @@ struct osiSymbol
 class osiSymbolParser
 {
   public:
-    osiSymbolParser(const std::string& symbol_)
+    osiSymbolParser(std::string_view symbol_)
     {
       parseOsiSymbol(symbol_);
     }
@@ -102,7 +103,7 @@ class osiSymbolParser
     }
 
   private:
-    bool isValidOsiSymbol(const std::string& symbol_)
+    bool isValidOsiSymbol(std::string_view symbol_)
     {
       // Fow now, only validate length, we can add more checks if needed.
       if (symbol_.length() > osiSymbolMaxLength ||
@@ -115,7 +116,7 @@ class osiSymbolParser
       return true;
     }
 
-    void parseOsiSymbol(const std::string& symbol_)
+    void parseOsiSymbol(std::string_view symbol_)
     {
       if (isValidOsiSymbol(symbol_))
       {
@@ -132,7 +133,6 @@ class osiSymbolParser
 
 int main()
 {
-
   osiSymbolParser tsla("TSLA 250216P00500000");
   tsla.display();
 
