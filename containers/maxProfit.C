@@ -29,7 +29,7 @@ int maxProfit(const std::vector<int>& prices)
 
 // `make gtest` to compile gtest binary
 #ifdef __GOOGLE_TEST__
-#include "maxProfitGtest.H"
+#include "gtest/maxProfitGtest.H"
 #endif
 
 int main([[maybe_unused]]int argc, [[maybe_unused]]char **argv)

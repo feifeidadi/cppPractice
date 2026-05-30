@@ -184,7 +184,7 @@ void benchmark_StringRef()
     for (const auto& symbol : testSymbols)
     {
       osiSymbolParser_StringRef parser(symbol);
-      volatile auto s = parser.getSymbol().strikePrice;  // Use result to prevent optimization
+      [[maybe_unused]] volatile auto s = parser.getSymbol().strikePrice;  // Use result to prevent optimization
     }
   }
 
@@ -214,7 +214,7 @@ void benchmark_StringView()
     for (const auto& symbol : testSymbols)
     {
       osiSymbolParser_StringView parser(symbol);
-      volatile auto s = parser.getSymbol().strikePrice;  // Use result to prevent optimization
+      [[maybe_unused]] volatile auto s = parser.getSymbol().strikePrice;  // Use result to prevent optimization
     }
   }
 
@@ -235,7 +235,7 @@ void benchmark_StringLiteralRef()
   {
     // Passing string literals directly - forces temporary std::string creation
     osiSymbolParser_StringRef parser("TSLA 250216P00500000");
-    volatile auto s = parser.getSymbol().strikePrice;
+    [[maybe_unused]] volatile auto s = parser.getSymbol().strikePrice;
   }
 
   auto end = std::chrono::high_resolution_clock::now();
@@ -255,7 +255,7 @@ void benchmark_StringLiteralView()
   {
     // Passing string literals directly - no conversion needed
     osiSymbolParser_StringView parser("TSLA 250216P00500000");
-    volatile auto s = parser.getSymbol().strikePrice;
+    [[maybe_unused]] volatile auto s = parser.getSymbol().strikePrice;
   }
 
   auto end = std::chrono::high_resolution_clock::now();

@@ -2,7 +2,7 @@ CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++17 -O2
 LDFLAGS = 
 
-SOURCES = $(wildcard *.C)
+SOURCES = $(wildcard *.C benchmarks/*.C)
 
 TARGETS = $(patsubst %.C,%,$(SOURCES))
 
