@@ -17,7 +17,7 @@ using strMap = std::map<std::string, std::string>;
  *                  k4 : v4
  *                }
  */
-void strToMap(const std::string inputStr, strMap& map)
+void strToMap(std::string_view inputStr, strMap& map)
 {
   map.clear();
   const boost::char_separator<char> sep(",");
